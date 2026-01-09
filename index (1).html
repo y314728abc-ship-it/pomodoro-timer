@@ -1,0 +1,2826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>思考小人 - 番茄钟</title>
+    <style>
+        /* CSS 变量定义 - 亮色模式 */
+        :root {
+            --bg-color: #f0f9f0;
+            --card-bg: #ffffff;
+            --card-bg-secondary: #fafafa;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-work: #34c759;
+            --accent-break: #007aff;
+            --accent-fail: #ff3b30;
+            --button-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --stats-bg: #fafafa;
+            --mode-badge-work: rgba(52, 199, 89, 0.15);
+            --mode-badge-break: rgba(0, 122, 255, 0.15);
+            --bg-customizer-bg: #f5f5f5;
+            --settings-bg: #f5f5f5;
+            --input-bg: #e9e9eb;
+            --input-border: #d1d1d6;
+            --speech-bubble-bg: #f0f0f0;
+            --speech-bubble-text: #333;
+            
+            /* 电脑端尺寸 */
+            --card-width: 600px;
+            --card-padding: 4rem;
+            --title-size: 3rem;
+            --subtitle-size: 1.6rem;
+            --timer-size: 5.5rem;
+            --boi-size: 24rem;
+            --btn-start-padding: 1.6rem 6rem;
+            --btn-start-font: 1.8rem;
+            --btn-action-padding: 1.4rem 3.2rem;
+            --btn-action-font: 1.6rem;
+            --stat-value-size: 2.4rem;
+            --stat-label-size: 1.2rem;
+        }
+        /* 暗色模式 */
+        body.dark-mode {
+            --bg-color: #1a1a2e;
+            --card-bg: #252542;
+            --card-bg-secondary: #2d2d4a;
+            --text-primary: #e4e4e7;
+            --text-secondary: #a1a1aa;
+            --accent-work: #4ade80;
+            --accent-break: #60a5fa;
+            --accent-fail: #f87171;
+            --button-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --stats-bg: #2d2d4a;
+            --mode-badge-work: rgba(74, 222, 128, 0.15);
+            --mode-badge-break: rgba(96, 165, 250, 0.15);
+            --bg-customizer-bg: #2d2d4a;
+            --settings-bg: #2d2d4a;
+            --input-bg: #3a3a5c;
+            --input-border: #4a4a6e;
+            --speech-bubble-bg: #3a3a5c;
+            --speech-bubble-text: #e4e4e7;
+        }
+        /* 蓝色主题 */
+        body.theme-blue {
+            --accent-work: #007aff;
+            --accent-break: #5856d6;
+            --accent-fail: #ff375f;
+            --mode-badge-work: rgba(0, 122, 255, 0.15);
+            --mode-badge-break: rgba(88, 86, 214, 0.15);
+        }
+        /* 紫色主题 */
+        body.theme-purple {
+            --accent-work: #af52de;
+            --accent-break: #bf5af2;
+            --accent-fail: #ff453a;
+            --mode-badge-work: rgba(175, 82, 222, 0.15);
+            --mode-badge-break: rgba(191, 90, 242, 0.15);
+        }
+        /* 橙色主题 */
+        body.theme-orange {
+            --accent-work: #ff9500;
+            --accent-break: #ff6b00;
+            --accent-fail: #ff3b30;
+            --mode-badge-work: rgba(255, 149, 0, 0.15);
+            --mode-badge-break: rgba(255, 107, 0, 0.15);
+        }
+        /* 全局重置 - 全屏覆盖基础 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        html {
+            font-size: 62.5%;
+            color: var(--text-primary);
+            -webkit-text-size-adjust: 100%;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            width: 100%;
+            height: 100%;
+            height: 100dvh; /* 动态视口高度，解决移动端地址栏问题 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease;
+            overflow: hidden;
+        }
+        /* 主卡片容器 - 全屏覆盖 */
+        .card {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            max-width: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: env(safe-area-inset-top, 2rem) env(safe-area-inset-right, 2rem) env(safe-area-inset-bottom, 2rem) env(safe-area-inset-left, 2rem);
+            background: transparent;
+            box-shadow: none;
+            border-radius: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        /* 顶部按钮 */
+        .top-buttons {
+            position: absolute;
+            top: env(safe-area-inset-top, 1rem);
+            left: env(safe-area-inset-left, 1rem);
+            right: env(safe-area-inset-right, 1rem);
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            z-index: 100;
+        }
+        .top-button {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            border: none;
+            background: var(--card-bg-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--button-shadow);
+            color: var(--text-primary);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        .top-button:hover {
+            transform: scale(1.08);
+        }
+        .top-button:active {
+            transform: scale(0.95);
+        }
+        .top-button svg {
+            width: 28px;
+            height: 28px;
+            transition: all 0.3s ease;
+            fill: var(--text-primary);
+        }
+        .theme-toggle .sun-icon { display: none; }
+        .theme-toggle .moon-icon { display: block; }
+        body.dark-mode .theme-toggle .sun-icon { display: block; }
+        body.dark-mode .theme-toggle .moon-icon { display: none; }
+        /* 标题样式 */
+        .title {
+            font-size: var(--title-size);
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+            letter-spacing: -1px;
+        }
+        .subtitle {
+            font-size: var(--subtitle-size);
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+        }
+        /* 主题切换器 */
+        .theme-switcher {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        .theme-btn:hover {
+            transform: scale(1.15);
+        }
+        .theme-btn:active {
+            transform: scale(0.95);
+        }
+        .theme-btn.active {
+            border-color: var(--text-primary);
+            transform: scale(1.1);
+        }
+        .theme-btn.green { background: linear-gradient(135deg, #34c759, #30b350); }
+        .theme-btn.blue { background: linear-gradient(135deg, #007aff, #0056b3); }
+        .theme-btn.purple { background: linear-gradient(135deg, #af52de, #8e44ad); }
+        .theme-btn.orange { background: linear-gradient(135deg, #ff9500, #ff6b00); }
+        /* 侧边垂直调色器 */
+        .side-palette {
+            position: absolute;
+            top: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 50;
+        }
+        .side-palette-left {
+            left: 1rem;
+            align-items: flex-start;
+        }
+        .side-palette-right {
+            right: 1rem;
+            align-items: flex-end;
+        }
+        .side-palette .theme-btn {
+            width: 36px;
+            height: 36px;
+        }
+        .side-palette .bg-preset {
+            width: 28px;
+            height: 28px;
+        }
+        .theme-switcher-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .bg-presets-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 0.5rem;
+        }
+        /* 移动端调色器 - 默认隐藏 */
+        .mobile-palette {
+            display: none;
+        }
+        @media screen and (max-width: 767px) {
+            .mobile-palette {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+                max-width: 100%;
+                margin-bottom: 1.5rem;
+                gap: 1rem;
+                padding: 0 1rem;
+                box-sizing: border-box;
+            }
+            .mobile-palette .theme-switcher {
+                flex: 1;
+                justify-content: center;
+                margin-bottom: 0;
+            }
+            .mobile-palette .bg-customizer {
+                flex: 1;
+                justify-content: center;
+                margin-bottom: 0;
+            }
+            .side-palette {
+                display: none;
+            }
+        }
+        /* 背景颜色自定义 */
+        .bg-customizer {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            margin-bottom: 2.5rem;
+            padding: 1.2rem 2rem;
+            background: var(--bg-customizer-bg);
+            border-radius: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .bg-customizer label {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+        }
+        .bg-color-picker {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            padding: 0;
+            overflow: hidden;
+        }
+        .bg-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+        .bg-color-picker::-webkit-color-swatch {
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        body.dark-mode .bg-color-picker::-webkit-color-swatch {
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .bg-presets {
+            display: flex;
+            gap: 0.8rem;
+        }
+        .bg-preset {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        .bg-preset:hover {
+            transform: scale(1.15);
+        }
+        .bg-preset:active {
+            transform: scale(0.95);
+        }
+        .bg-preset.active {
+            border-color: var(--text-primary);
+            transform: scale(1.1);
+        }
+        .bg-preset.green { background: linear-gradient(135deg, #f0f9f0, #d4edda); }
+        .bg-preset.blue { background: linear-gradient(135deg, #f0f4f9, #d4e5f7); }
+        .bg-preset.purple { background: linear-gradient(135deg, #f5f0f9, #e8dff5); }
+        .bg-preset.orange { background: linear-gradient(135deg, #f9f5f0, #f5e6d3); }
+        .bg-preset.pink { background: linear-gradient(135deg, #f9f0f5, #f5d4e0); }
+        .bg-preset.gray { background: linear-gradient(135deg, #f5f5f5, #e5e5e5); }
+        /* 模式指示器 */
+        .mode-indicator {
+            display: flex;
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 50;
+        }
+        .mode-badge {
+            padding: 0.8rem 1.8rem;
+            border-radius: 24px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-badge:hover {
+            opacity: 0.8;
+        }
+        .mode-badge:active {
+            opacity: 0.7;
+            transform: scale(0.95);
+        }
+        .mode-badge.active {
+            opacity: 1;
+            transform: scale(1.08);
+        }
+        .mode-badge.work {
+            background: var(--mode-badge-work);
+            color: var(--accent-work);
+        }
+        .mode-badge.break {
+            background: var(--mode-badge-break);
+            color: var(--accent-break);
+        }
+        /* 任务输入 */
+        .task-input-container {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 2rem;
+        }
+        .task-input {
+            width: 100%;
+            padding: 1.2rem 1.8rem;
+            border-radius: 16px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            font-size: 1.6rem;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .task-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+        .task-input:focus {
+            outline: none;
+            border-color: var(--accent-work);
+            box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.2);
+        }
+        /* 番茄钟计时器 */
+        .timer-container {
+            text-align: center;
+            margin-bottom: 2rem;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        /* 进度环 */
+        .progress-ring {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin-bottom: 2rem;
+        }
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 6;
+        }
+        .progress-ring .bg {
+            stroke: #e5e5e5;
+        }
+        body.dark-mode .progress-ring .bg {
+            stroke: #3d3d5c;
+        }
+        .progress-ring .progress {
+            stroke: var(--accent-work);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+        }
+        .progress-ring .progress.break {
+            stroke: var(--accent-break);
+        }
+        .timer-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        .timer-display {
+            font-size: var(--timer-size);
+            font-weight: 700;
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+            white-space: nowrap;
+            line-height: 1;
+            letter-spacing: 2px;
+            text-shadow: 
+                0 2px 4px rgba(0,0,0,0.1),
+                0 4px 8px rgba(0,0,0,0.08),
+                0 0 0 3px rgba(255,255,255,0.3) inset;
+            -webkit-text-stroke: 1px rgba(0,0,0,0.05);
+        }
+        body.dark-mode .timer-display {
+            text-shadow: 
+                0 2px 4px rgba(0,0,0,0.3),
+                0 4px 8px rgba(0,0,0,0.2),
+                0 0 0 3px rgba(255,255,255,0.1) inset;
+            -webkit-text-stroke: 1px rgba(255,255,255,0.1);
+        }
+        .timer-label {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+        .timer-display.work-mode {
+            color: var(--accent-work);
+        }
+        .timer-display.break-mode {
+            color: var(--accent-break);
+        }
+        /* 思考小人 */
+        .boi-container {
+            position: relative;
+            margin: 2rem 0;
+        }
+        .thinking-boi {
+            --thinking-level: 0.5;
+            --px: 0.5;
+            --py: 0.5;
+            --mouth-open: 0;
+            --eye-blink: 0;
+            width: var(--boi-size);
+            height: var(--boi-size);
+            background: radial-gradient(circle at 30% 30%, #ffe066 0%, #fdd835 50%, #f9a825 100%);
+            border-radius: 50%;
+            overflow: visible;
+            position: relative;
+            border: 4px solid #fbc02d;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 -10px 30px rgba(0, 0, 0, 0.1),
+                inset 0 10px 30px rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body.dark-mode .thinking-boi {
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.4),
+                inset 0 -10px 30px rgba(0, 0, 0, 0.15),
+                inset 0 10px 30px rgba(255, 255, 255, 0.15);
+        }
+        .thinking-boi:hover {
+            transform: scale(1.02);
+        }
+        .thinking-boi:active {
+            transform: scale(0.98);
+        }
+        .thinking-boi * {
+            position: absolute;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* 腮红 */
+        .boi-blush {
+            width: 18%;
+            height: 10%;
+            background: radial-gradient(ellipse, rgba(255, 100, 100, 0.5) 0%, rgba(255, 100, 100, 0) 70%);
+            border-radius: 50%;
+            top: 55%;
+            opacity: calc(1 - var(--thinking-level) * 0.8);
+        }
+        .boi-blush-left { left: 15%; }
+        .boi-blush-right { right: 15%; }
+        /* 眼睛 */
+        .thinking-boi-eye {
+            width: 20%;
+            height: 20%;
+            background-color: #333;
+            border-radius: 50%;
+            top: calc(35% + var(--py) * 3%);
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            transform: scaleY(calc(1 - var(--eye-blink)));
+        }
+        .thinking-boi-eye-left { left: calc(22% + var(--px) * 2%); }
+        .thinking-boi-eye-right { right: calc(22% - var(--px) * 2%); }
+        .thinking-boi-eye::after {
+            content: '';
+            display: block;
+            background-color: #fff;
+            width: 30%;
+            height: 30%;
+            border-radius: 50%;
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            transform: translate(calc((var(--px) - 0.5) * 150%), calc((var(--py) - 0.5) * 150%));
+            transition: transform 0.1s;
+        }
+        .thinking-boi-eye::before {
+            content: '';
+            display: block;
+            width: 12%;
+            height: 12%;
+            background-color: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 12%;
+            left: 50%;
+            opacity: 0.8;
+        }
+        /* 眉毛 */
+        .thinking-boi-eyebrow {
+            width: 26%;
+            height: 6%;
+            background-color: #333;
+            border-radius: 50% / 100% 100% 0 0;
+            top: calc(28% + var(--thinking-level) * 3%);
+            opacity: calc(0.4 + var(--thinking-level) * 0.6);
+            transform: rotate(calc(var(--thinking-level) * 20deg));
+        }
+        .thinking-boi-eyebrow-left {
+            left: 18%;
+            transform-origin: bottom right;
+            transform: rotate(calc(var(--thinking-level) * -20deg));
+        }
+        .thinking-boi-eyebrow-right {
+            right: 18%;
+            transform-origin: bottom left;
+            transform: rotate(calc(var(--thinking-level) * 20deg));
+        }
+        /* 嘴巴 */
+        .thinking-boi-mouth {
+            width: 32%;
+            height: 5%;
+            background-color: #333;
+            border-radius: 1rem;
+            top: calc(62% + var(--thinking-level) * 5%);
+            left: 50%;
+            transform: translateX(-50%) rotate(calc(var(--thinking-level) * 10deg));
+            height: calc(5% + var(--mouth-open) * 10%);
+            border-radius: calc(1rem + var(--mouth-open) * 0.5rem);
+        }
+        .thinking-boi-mouth::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #fdd835;
+            border-radius: 1rem;
+            top: calc(var(--thinking-level) * -80%);
+            transition: all 0.3s;
+        }
+        .thinking-boi-mouth::after {
+            content: '';
+            position: absolute;
+            width: 35%;
+            height: 50%;
+            background: #ff7675;
+            border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+            bottom: calc(var(--thinking-level) * -30%);
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: calc(1 - var(--thinking-level));
+            transition: all 0.3s;
+        }
+        /* 手托下巴 */
+        .thinking-boi-hand {
+            width: 32%;
+            height: 22%;
+            background: radial-gradient(ellipse at 50% 0%, #ffe066 0%, #fdd835 100%);
+            border: 4px solid #fbc02d;
+            border-radius: 50%;
+            bottom: calc(8% - var(--thinking-level) * 8%);
+            left: 50%;
+            transform: translateX(-50%) rotate(calc(var(--thinking-level) * -15deg));
+            opacity: calc(0.4 + var(--thinking-level) * 0.6);
+            z-index: 2;
+        }
+        /* 问号动画 */
+        .thinking-boi-question {
+            position: absolute;
+            font-size: 4.5rem;
+            font-weight: bold;
+            color: var(--accent-fail);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+        .thinking-boi-question.active {
+            animation: floatQuestion 2s ease-in-out infinite;
+            opacity: calc(0.5 + var(--thinking-level) * 0.5);
+        }
+        @keyframes floatQuestion {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+        /* 灯泡效果 */
+        .thinking-boi-lamp {
+            position: absolute;
+            font-size: 6rem;
+            top: -65px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 15;
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+        }
+        .thinking-boi-lamp.active {
+            opacity: 1;
+            animation: lampGlow 1.5s ease-in-out infinite;
+        }
+        @keyframes lampGlow {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 20px #ffd700); transform: translateX(-50%) scale(1); }
+            50% { filter: brightness(1.4) drop-shadow(0 0 30px #ffd700) drop-shadow(0 0 50px #ffeb3b); transform: translateX(-50%) scale(1.1); }
+        }
+        /* 眼泪效果 */
+        .boi-tear {
+            width: 10%;
+            height: 18%;
+            background: linear-gradient(180deg, rgba(100, 181, 246, 0.9) 0%, rgba(66, 165, 245, 0.9) 100%);
+            border-radius: 0 0 50% 50%;
+            top: 58%;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 5;
+        }
+        .boi-tear-left { left: 26%; }
+        .boi-tear-right { right: 26%; }
+        .boi-tear.active {
+            opacity: 1;
+            animation: tearDrop 1s ease-in infinite;
+        }
+        @keyframes tearDrop {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+        /* 星星效果 */
+        .star {
+            position: absolute;
+            font-size: 2.2rem;
+            color: #ffd700;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .star.active {
+            animation: starTwinkle 0.8s ease-in-out infinite;
+        }
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        /* 彩带效果 */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .confetti.active {
+            animation: confettiFall 2.5s linear forwards;
+        }
+        @keyframes confettiFall {
+            0% { opacity: 1; transform: translateY(-50px) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+        }
+        /* 气泡对话 */
+        .boi-speech-bubble {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100%);
+            background: var(--speech-bubble-bg);
+            color: var(--speech-bubble-text);
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            font-size: 1.4rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: var(--button-shadow);
+            z-index: 20;
+        }
+        .boi-speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid var(--speech-bubble-bg);
+        }
+        .boi-speech-bubble.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-100%) scale(1);
+            animation: bubblePop 0.3s ease-out;
+        }
+        @keyframes bubblePop {
+            0% { transform: translateX(-50%) translateY(-100%) scale(0.8); opacity: 0; }
+            100% { transform: translateX(-50%) translateY(-100%) scale(1); opacity: 1; }
+        }
+        /* 开始/暂停按钮 */
+        .btn-toggle {
+            padding: var(--btn-start-padding);
+            border-radius: 18px;
+            font-size: var(--btn-start-font);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: none;
+            box-shadow: var(--button-shadow);
+            background: linear-gradient(135deg, #5856d6, #4840aa);
+            color: white;
+            margin-bottom: 2rem;
+            min-width: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            min-height: 56px;
+        }
+        .btn-toggle:hover {
+            box-shadow: 0 8px 24px rgba(88, 86, 214, 0.4);
+            transform: translateY(-3px);
+        }
+        .btn-toggle:active {
+            transform: scale(0.95);
+        }
+        .btn-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+        /* 操作按钮容器 */
+        .action-buttons {
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            width: 100%;
+            max-width: 400px;
+        }
+        /* 操作按钮样式 */
+        .btn-action {
+            flex: 1;
+            min-width: 140px;
+            max-width: 180px;
+            padding: 1.2rem 1rem;
+            border-radius: 16px;
+            font-size: var(--btn-action-font);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: none;
+            box-shadow: var(--button-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            min-height: 52px;
+        }
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+        .btn-action svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #34c759, #30b350);
+            color: white;
+        }
+        .btn-success:hover {
+            box-shadow: 0 8px 24px rgba(52, 199, 89, 0.4);
+            transform: translateY(-3px);
+        }
+        .btn-fail {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+        .btn-fail:hover {
+            box-shadow: 0 8px 24px rgba(255, 107, 107, 0.4);
+            transform: translateY(-3px);
+        }
+        .btn-end {
+            background: linear-gradient(135deg, #8e8e93, #636366);
+            color: white;
+        }
+        .btn-end:hover {
+            box-shadow: 0 8px 24px rgba(142, 142, 147, 0.4);
+            transform: translateY(-3px);
+        }
+        /* 统计面板 */
+        .stats-panel {
+            display: flex;
+            gap: 3rem;
+            margin-top: 2.5rem;
+            padding: 2rem 3rem;
+            background: var(--stats-bg);
+            border-radius: 20px;
+            width: 100%;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: var(--stat-value-size);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .stat-label {
+            font-size: var(--stat-label-size);
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+        /* 彩蛋提示 */
+        .easter-egg-hint {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            margin-top: 2rem;
+            transition: opacity 0.3s;
+        }
+        .easter-egg-hint:hover {
+            opacity: 1;
+        }
+        /* 弹窗 */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .popup-content {
+            background: var(--card-bg);
+            padding: 4rem 5rem;
+            border-radius: 24px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .popup-overlay.active .popup-content {
+            transform: scale(1);
+        }
+        .popup-message {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        /* 设置弹窗 */
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            padding: env(safe-area-inset-top, 2rem) env(safe-area-inset-right, 1rem) env(safe-area-inset-bottom, 2rem) env(safe-area-inset-left, 1rem);
+        }
+        .settings-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .settings-content {
+            background: var(--settings-bg);
+            padding: 3rem;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            color: var(--text-primary);
+        }
+        .settings-modal.active .settings-content {
+            transform: scale(1);
+        }
+        .settings-content h2 {
+            font-size: 2.4rem;
+            margin-bottom: 2.5rem;
+            text-align: center;
+            color: var(--text-primary);
+        }
+        .settings-group {
+            margin-bottom: 2rem;
+        }
+        .settings-group label {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .settings-group input[type="number"],
+        .settings-group input[type="range"] {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            border-radius: 12px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            font-size: 1.6rem;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        .settings-group input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-work);
+            box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.2);
+        }
+        .settings-group input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: var(--input-border);
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .settings-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-work);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .settings-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-work);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .settings-group .range-value {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            text-align: right;
+        }
+        .settings-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+        .settings-toggle label {
+            margin-bottom: 0;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 28px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--input-border);
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--accent-work);
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--accent-work);
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        .settings-close-btn {
+            background: var(--accent-break);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            border-radius: 16px;
+            border: none;
+            font-size: 1.6rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 2rem;
+            box-shadow: var(--button-shadow);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            min-height: 52px;
+        }
+        .settings-close-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 122, 255, 0.3);
+        }
+        .settings-close-btn:active {
+            transform: translateY(0);
+        }
+        /* 音量控制 */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+        }
+        .volume-control input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: var(--input-border);
+            outline: none;
+            border-radius: 4px;
+            transition: opacity .2s;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-work);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        .volume-control input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-work);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border: none;
+        }
+        .volume-icon {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-primary);
+            transition: opacity 0.3s;
+        }
+        .volume-icon.low {
+            opacity: 0.3;
+        }
+        .volume-icon.high {
+            opacity: 1;
+        }
+        /* 音效选择器 */
+        .sound-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .sound-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.2rem;
+            background: var(--input-bg);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .sound-option:hover {
+            background: var(--card-bg-secondary);
+        }
+        .sound-option.active {
+            border-color: var(--accent-work);
+            background: var(--mode-badge-work);
+        }
+        .sound-name {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .sound-preview {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent-break);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .sound-preview:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+        .sound-preview:active {
+            transform: scale(0.95);
+        }
+        /* 动画效果 */
+        .pulse {
+            animation: pulseAnimation 0.4s ease-in-out;
+        }
+        @keyframes pulseAnimation {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .shake {
+            animation: shakeAnimation 0.5s ease-in-out;
+        }
+        @keyframes shakeAnimation {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .hidden {
+            display: none !important;
+        }
+        /* 响应式设计 - 平板横屏 (16:9) */
+        @media screen and (min-width: 768px) and (orientation: landscape) {
+            :root {
+                --title-size: 3.2rem;
+                --subtitle-size: 1.6rem;
+                --timer-size: 6rem;
+                --boi-size: 28rem;
+                --btn-start-padding: 1.6rem 6rem;
+                --btn-start-font: 1.8rem;
+                --btn-action-padding: 1.4rem 3.2rem;
+                --btn-action-font: 1.6rem;
+                --stat-value-size: 2.6rem;
+            }
+            .progress-ring {
+                width: 280px;
+                height: 280px;
+            }
+            .progress-ring svg {
+                width: 280px;
+                height: 280px;
+            }
+            .top-button {
+                width: 56px;
+                height: 56px;
+            }
+            .top-button svg {
+                width: 28px;
+                height: 28px;
+            }
+            .card {
+                padding: 3rem;
+            }
+        }
+        /* 响应式设计 - 平板竖屏 */
+        @media screen and (min-width: 768px) and (orientation: portrait) {
+            :root {
+                --title-size: 3rem;
+                --subtitle-size: 1.6rem;
+                --timer-size: 5.5rem;
+                --boi-size: 26rem;
+                --btn-start-padding: 1.5rem 5.5rem;
+                --btn-start-font: 1.8rem;
+                --btn-action-padding: 1.3rem 3rem;
+                --btn-action-font: 1.6rem;
+                --stat-value-size: 2.5rem;
+            }
+            .progress-ring {
+                width: 260px;
+                height: 260px;
+            }
+            .progress-ring svg {
+                width: 260px;
+                height: 260px;
+            }
+        }
+        /* 响应式设计 - 手机横屏 (16:9) */
+        @media screen and (max-width: 767px) and (orientation: landscape) {
+            :root {
+                --title-size: 2.4rem;
+                --subtitle-size: 1.3rem;
+                --timer-size: 4.5rem;
+                --boi-size: 20rem;
+                --btn-start-padding: 1rem 4rem;
+                --btn-start-font: 1.5rem;
+                --btn-action-padding: 0.8rem 2rem;
+                --btn-action-font: 1.3rem;
+                --stat-value-size: 2rem;
+            }
+            .progress-ring {
+                width: 180px;
+                height: 180px;
+            }
+            .progress-ring svg {
+                width: 180px;
+                height: 180px;
+            }
+            .card {
+                flex-direction: row;
+                gap: 2rem;
+                padding: 1rem 2rem;
+            }
+            .top-buttons {
+                top: 0.5rem;
+            }
+            .stats-panel {
+                position: absolute;
+                bottom: 1rem;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                gap: 2rem;
+                padding: 1rem 2rem;
+                min-width: 300px;
+            }
+            .easter-egg-hint {
+                display: none;
+            }
+        }
+        /* 响应式设计 - 手机竖屏 (9:16) */
+        @media screen and (max-width: 767px) and (orientation: portrait) {
+            :root {
+                --title-size: 2.4rem;
+                --subtitle-size: 1.2rem;
+                --timer-size: 4.2rem;
+                --boi-size: 18rem;
+                --btn-start-padding: 1rem 4rem;
+                --btn-start-font: 1.5rem;
+                --btn-action-padding: 0.9rem 2rem;
+                --btn-action-font: 1.3rem;
+                --stat-value-size: 2rem;
+                --stat-label-size: 1.1rem;
+            }
+            .progress-ring {
+                width: 180px;
+                height: 180px;
+                margin-bottom: 1rem;
+            }
+            .progress-ring svg {
+                width: 180px;
+                height: 180px;
+            }
+            .progress-ring circle {
+                stroke-width: 8;
+            }
+            .top-button {
+                width: 44px;
+                height: 44px;
+            }
+            .top-button svg {
+                width: 22px;
+                height: 22px;
+            }
+            .card {
+                padding: env(safe-area-inset-top, 1rem) env(safe-area-inset-right, 1rem) env(safe-area-inset-bottom, 1rem) env(safe-area-inset-left, 1rem);
+                height: 100%;
+                height: 100dvh;
+                overflow-y: auto;
+                overflow-x: hidden;
+                justify-content: flex-start;
+                padding-top: calc(env(safe-area-inset-top, 1rem) + 60px);
+            }
+            .top-buttons {
+                position: absolute;
+                top: env(safe-area-inset-top, 0.5rem);
+                left: env(safe-area-inset-left, 0.5rem);
+                right: env(safe-area-inset-right, 0.5rem);
+                z-index: 100;
+            }
+            /* 模式指示器放在计时器下方，避免被顶部按钮遮挡 */
+            .mode-indicator {
+                margin-top: 0.5rem;
+                margin-bottom: 1rem;
+                gap: 0.6rem;
+            }
+            .mode-badge {
+                padding: 0.5rem 1rem;
+                font-size: 1.1rem;
+                flex: 1;
+                text-align: center;
+                min-height: 40px;
+            }
+            .mobile-palette {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+                padding: 0 0.5rem;
+            }
+            .mobile-palette .theme-switcher {
+                width: 100%;
+                justify-content: center;
+            }
+            .mobile-palette .bg-customizer {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .title {
+                margin-bottom: 0.4rem;
+            }
+            .subtitle {
+                margin-bottom: 1.5rem;
+                font-size: 1.2rem;
+            }
+            .theme-switcher {
+                margin-bottom: 1.5rem;
+                gap: 0.8rem;
+            }
+            .theme-btn {
+                width: 36px;
+                height: 36px;
+            }
+            .bg-customizer {
+                padding: 1rem 1.5rem;
+                margin-bottom: 1.5rem;
+                gap: 1rem;
+            }
+            .bg-customizer label {
+                font-size: 1.2rem;
+            }
+            .bg-color-picker {
+                width: 40px;
+                height: 40px;
+            }
+            .bg-preset {
+                width: 32px;
+                height: 32px;
+            }
+            .task-input-container {
+                margin-bottom: 1rem;
+            }
+            .task-input {
+                padding: 1rem 1.5rem;
+                font-size: 1.4rem;
+            }
+            .boi-container {
+                margin: 1rem 0;
+            }
+            .timer-label {
+                font-size: 1rem;
+                margin-top: 0.3rem;
+            }
+            .btn-toggle {
+                margin-bottom: 1rem;
+                min-width: 200px;
+                min-height: 50px;
+            }
+            .action-buttons {
+                margin-bottom: 1rem;
+                gap: 0.8rem;
+            }
+            .btn-action {
+                min-width: 120px;
+                padding: 1rem 1rem;
+                min-height: 48px;
+            }
+            .stats-panel {
+                margin-top: 1.5rem;
+                padding: 1.5rem 2rem;
+                gap: 2rem;
+            }
+            .easter-egg-hint {
+                font-size: 1.1rem;
+                margin-top: 1.5rem;
+                opacity: 0.6;
+            }
+        }
+        /* 极小屏幕适配 */
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            :root {
+                --title-size: 2rem;
+                --subtitle-size: 1.1rem;
+                --timer-size: 3.5rem;
+                --boi-size: 14rem;
+                --boi-size: 16rem;
+                --btn-start-padding: 0.8rem 3rem;
+                --btn-start-font: 1.3rem;
+                --btn-action-padding: 0.6rem 1.5rem;
+                --btn-action-font: 1.1rem;
+                --stat-value-size: 1.6rem;
+            }
+            .progress-ring {
+                width: 140px;
+                height: 140px;
+            }
+            .progress-ring svg {
+                width: 140px;
+                height: 140px;
+            }
+            .card {
+                flex-direction: row;
+                gap: 1rem;
+                padding: 0.5rem 1rem;
+            }
+            .stats-panel {
+                position: absolute;
+                bottom: 0.5rem;
+                gap: 1rem;
+                padding: 0.8rem 1.5rem;
+            }
+            .stats-panel .stat-label {
+                font-size: 1rem;
+            }
+        }
+        /* 超宽屏幕适配 */
+        @media screen and (min-width: 1440px) {
+            :root {
+                --title-size: 3.6rem;
+                --subtitle-size: 1.8rem;
+                --timer-size: 7rem;
+                --boi-size: 32rem;
+                --btn-start-padding: 1.8rem 7rem;
+                --btn-start-font: 2rem;
+                --btn-action-padding: 1.6rem 3.5rem;
+                --btn-action-font: 1.8rem;
+                --stat-value-size: 3rem;
+            }
+            .progress-ring {
+                width: 320px;
+                height: 320px;
+            }
+            .progress-ring svg {
+                width: 320px;
+                height: 320px;
+            }
+            .card {
+                padding: 4rem;
+            }
+        }
+        /* 操作按钮容器 - 手机端 */
+        @media screen and (max-width: 767px) and (orientation: portrait) {
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                width: 100%;
+                max-width: 320px;
+            }
+            .btn-action {
+                width: 100%;
+                max-width: none;
+                padding: 1.2rem 1.5rem;
+                font-size: 1.5rem;
+            }
+            .btn-toggle {
+                width: 100%;
+                max-width: 320px;
+                margin-bottom: 1.5rem;
+            }
+            .stats-panel {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1.5rem 2rem;
+                width: 90%;
+            }
+            .bg-customizer {
+                flex-wrap: wrap;
+                justify-content: center;
+                padding: 1rem 1.5rem;
+                gap: 1rem;
+                width: 90%;
+                border-radius: 12px;
+            }
+            .bg-customizer label {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 0.5rem;
+            }
+            .bg-presets {
+                width: 100%;
+                justify-content: center;
+            }
+            .easter-egg-hint {
+                font-size: 1.2rem;
+                margin-top: 1.5rem;
+            }
+            .settings-content {
+                padding: 1.5rem;
+                max-width: 95%;
+                max-height: 85vh;
+                overflow-y: auto;
+            }
+            .settings-content h2 {
+                font-size: 1.8rem;
+                margin-bottom: 1.5rem;
+            }
+            .settings-group {
+                margin-bottom: 1.2rem;
+            }
+            .settings-group label {
+                font-size: 1.3rem;
+                margin-bottom: 0.5rem;
+            }
+            .settings-group input[type="range"] {
+                height: 6px;
+            }
+            .settings-group input[type="range"]::-webkit-slider-thumb {
+                width: 18px;
+                height: 18px;
+            }
+            .settings-group .range-value {
+                font-size: 1.2rem;
+            }
+            .settings-toggle {
+                margin-bottom: 1rem;
+            }
+            .settings-toggle label {
+                font-size: 1.3rem;
+            }
+            .settings-close-btn {
+                padding: 1rem 2rem;
+                font-size: 1.4rem;
+                min-height: 48px;
+                margin-top: 1.2rem;
+            }
+            /* 音量控制移动端优化 */
+            .volume-control {
+                gap: 0.8rem;
+            }
+            .volume-control input[type="range"] {
+                height: 6px;
+            }
+            .volume-control input[type="range"]::-webkit-slider-thumb {
+                width: 18px;
+                height: 18px;
+            }
+            .volume-icon {
+                width: 20px;
+                height: 20px;
+            }
+            .range-value {
+                font-size: 1.2rem;
+                min-width: 50px;
+            }
+            /* 音效选择器移动端优化 */
+            .sound-selector {
+                gap: 0.6rem;
+            }
+            .sound-option {
+                padding: 0.8rem 1rem;
+            }
+            .sound-name {
+                font-size: 1.2rem;
+            }
+            .sound-preview {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+            }
+            /* 确保背景预设可点击 */
+            .bg-preset {
+                cursor: pointer;
+                pointer-events: auto;
+            }
+            /* 确保颜色选择器可点击 */
+            .bg-color-picker {
+                cursor: pointer;
+                pointer-events: auto;
+            }
+        }
+        /* 横屏模式特殊处理 */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            .action-buttons {
+                flex-direction: row;
+                gap: 1rem;
+            }
+            .btn-action {
+                flex: 1;
+                max-width: none;
+                padding: 0.8rem 1.5rem;
+                font-size: 1.3rem;
+            }
+            .btn-toggle {
+                width: auto;
+                max-width: none;
+                padding: 0.8rem 3rem;
+            }
+        }
+        /* 超小屏幕设置面板优化 */
+        @media screen and (max-width: 360px) and (orientation: portrait) {
+            .settings-content {
+                padding: 1.2rem;
+                max-width: 98%;
+            }
+            .settings-content h2 {
+                font-size: 1.6rem;
+                margin-bottom: 1.2rem;
+            }
+            .settings-group {
+                margin-bottom: 1rem;
+            }
+            .settings-group label {
+                font-size: 1.2rem;
+            }
+            .settings-toggle {
+                margin-bottom: 0.8rem;
+            }
+            .settings-toggle label {
+                font-size: 1.2rem;
+            }
+            .settings-close-btn {
+                padding: 0.8rem 1.5rem;
+                font-size: 1.3rem;
+                min-height: 44px;
+                margin-top: 1rem;
+            }
+            .sound-name {
+                font-size: 1.1rem;
+            }
+            .sound-preview {
+                width: 28px;
+                height: 28px;
+                font-size: 0.9rem;
+            }
+            .volume-icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主卡片 -->
+    <div class="card" id="main-card">
+        <!-- 顶部按钮组 -->
+        <div class="top-buttons">
+            <button class="top-button theme-toggle" id="theme-toggle" title="切换深色/浅色模式">
+                <svg class="sun-icon" viewBox="0 0 24 24">
+                    <path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z"/>
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 24 24">
+                    <path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22.0051 11.8921 21.9962 11.8843 21.9905 11.8774C20.6854 10.3307 19.3042 8.68673 17 7C15.3529 5.86234 13.1769 5 10 5C6.13401 5 3 8.13401 3 12C3 15.866 5.858 19.062 9.14281 19.8859C9.08073 19.9671 9.02046 20.0492 8.9625 20.1324C8.16312 21.4676 7.37052 22.8046 6.59865 24C6.38381 23.9314 6.18625 23.8425 6.00025 23.7425C4.00525 22.3545 3 20.2995 3 18C3 14.134 6.13401 11 10 7Z"/>
+                </svg>
+            </button>
+            <button class="top-button" id="settings-btn" title="设置">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5ZM12 13.5C12.8284 13.5 13.5 12.8284 13.5 12C13.5 11.1716 12.8284 10.5 12 10.5C11.1716 10.5 10.5 11.1716 10.5 12C10.5 12.8284 11.1716 13.5 12 13.5ZM12 2C12.2652 2 12.5196 2.10536 12.7071 2.29289L13.7071 3.29289C13.8946 3.48043 14.149 3.58579 14.4142 3.58579H16.5858C16.8509 3.58579 17.1054 3.69114 17.2929 3.87868L18.2929 4.87868C18.4804 5.06621 18.5858 5.32065 18.5858 5.58579V7.75736C18.5858 8.0225 18.6911 8.27694 18.8787 8.46447L19.8787 9.46447C20.0662 9.65201 20.1716 9.90645 20.1716 10.1716V13.8284C20.1716 14.0935 20.0662 14.348 19.8787 14.5355L18.8787 15.5355C18.6911 15.7231 18.5858 15.9775 18.5858 16.2426V18.4142C18.5858 18.6793 18.4804 18.9338 18.2929 19.1213L17.2929 20.1213C17.1054 20.3088 16.8509 20.4142 16.5858 20.4142H14.4142C14.149 20.4142 13.8946 20.5196 13.7071 20.7071L12.7071 21.7071C12.5196 21.8946 12.2652 22 12 22C11.7348 22 11.4804 21.8946 11.2929 21.7071L10.2929 20.7071C10.1054 20.5196 9.8509 20.4142 9.58579 20.4142H7.41421C7.14909 20.4142 6.89465 20.3088 6.70711 20.1213L5.70711 19.1213C5.51957 18.9338 5.41421 18.6793 5.41421 18.4142V16.2426C5.41421 15.9775 5.30886 15.7231 5.12132 15.5355L4.12132 14.5355C3.93379 14.348 3.82843 14.0935 3.82843 13.8284V10.1716C3.82843 9.90645 3.93379 9.65201 4.12132 9.46447L5.12132 8.46447C5.30886 8.27694 5.41421 8.0225 5.41421 7.75736V5.58579C5.41421 5.32065 5.51957 5.06621 5.70711 4.87868L6.70711 3.87868C6.89465 3.69114 7.14909 3.58579 7.41421 3.58579H9.58579C9.8509 3.58579 10.1054 3.48043 10.2929 3.29289L11.2929 2.29289C11.4804 2.10536 11.7348 2 12 2Z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- 左侧：主题颜色垂直排列 -->
+        <div class="side-palette side-palette-left">
+            <div class="theme-switcher-vertical">
+                <div class="theme-btn green active" data-theme="green" title="绿色主题"></div>
+                <div class="theme-btn blue" data-theme="blue" title="蓝色主题"></div>
+                <div class="theme-btn purple" data-theme="purple" title="紫色主题"></div>
+                <div class="theme-btn orange" data-theme="orange" title="橙色主题"></div>
+            </div>
+        </div>
+        
+        <!-- 右侧：背景颜色垂直排列 -->
+        <div class="side-palette side-palette-right">
+            <div class="bg-presets-vertical">
+                <div class="bg-preset green active" data-color="#f0f9f0" title="绿色"></div>
+                <div class="bg-preset blue" data-color="#f0f4f9" title="蓝色"></div>
+                <div class="bg-preset purple" data-color="#f5f0f9" title="紫色"></div>
+                <div class="bg-preset orange" data-color="#f9f5f0" title="橙色"></div>
+                <div class="bg-preset pink" data-color="#f9f0f5" title="粉色"></div>
+                <div class="bg-preset gray" data-color="#f5f5f5" title="灰色"></div>
+            </div>
+            <input type="color" class="bg-color-picker" id="bg-color-picker" value="#f0f9f0" title="自定义颜色">
+        </div>
+        <h1 class="title">思考小人</h1>
+        <p class="subtitle">专注番茄钟 · 深度思考</p>
+        
+        <!-- 移动端调色器 (仅移动端显示) -->
+        <div class="mobile-palette">
+            <div class="theme-switcher">
+                <div class="theme-btn green active" data-theme="green" title="绿色主题"></div>
+                <div class="theme-btn blue" data-theme="blue" title="蓝色主题"></div>
+                <div class="theme-btn purple" data-theme="purple" title="紫色主题"></div>
+                <div class="theme-btn orange" data-theme="orange" title="橙色主题"></div>
+            </div>
+            <div class="bg-customizer">
+                <input type="color" class="bg-color-picker" id="bg-color-picker" value="#f0f9f0">
+                <div class="bg-presets">
+                    <div class="bg-preset green active" data-color="#f0f9f0" title="绿色"></div>
+                    <div class="bg-preset blue" data-color="#f0f4f9" title="蓝色"></div>
+                    <div class="bg-preset purple" data-color="#f5f0f9" title="紫色"></div>
+                    <div class="bg-preset orange" data-color="#f9f5f0" title="橙色"></div>
+                    <div class="bg-preset pink" data-color="#f9f0f5" title="粉色"></div>
+                    <div class="bg-preset gray" data-color="#f5f5f5" title="灰色"></div>
+                </div>
+            </div>
+        </div>
+        <!-- 模式切换 -->
+        <div class="mode-indicator">
+            <span class="mode-badge work active" id="mode-work">工作模式</span>
+            <span class="mode-badge break" id="mode-break">休息模式</span>
+        </div>
+        <!-- 任务输入 -->
+        <div class="task-input-container">
+            <input type="text" class="task-input" id="task-input" placeholder="你正在思考什么？">
+        </div>
+        <!-- 番茄钟计时器 -->
+        <div class="timer-container">
+            <div class="progress-ring" id="progress-ring">
+                <svg viewBox="0 0 240 240">
+                    <circle class="bg" cx="120" cy="120" r="110"></circle>
+                    <circle class="progress" id="progress-circle" cx="120" cy="120" r="110"
+                            stroke-dasharray="691.15" stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="timer-inner">
+                    <div class="timer-display work-mode" id="timer-display">25:00</div>
+                    <div class="timer-label" id="timer-label">专注时间</div>
+                </div>
+            </div>
+        </div>
+        <!-- 思考小人 -->
+        <div class="boi-container">
+            <div class="thinking-boi" id="thinking-boi" style="--thinking-level:0.5; --px:0.5; --py:0.5; --mouth-open:0; --eye-blink:0;">
+                <div class="boi-speech-bubble" id="boi-speech-bubble"></div>
+                <div class="thinking-boi-lamp" id="lamp">💡</div>
+                <div class="thinking-boi-question" id="question" style="left: -25%;">?</div>
+                <div class="thinking-boi-question" id="question2" style="right: -25%;">?</div>
+                <div class="boi-blush boi-blush-left"></div>
+                <div class="boi-blush boi-blush-right"></div>
+                <div class="thinking-boi-eyebrow thinking-boi-eyebrow-left"></div>
+                <div class="thinking-boi-eyebrow thinking-boi-eyebrow-right"></div>
+                <div class="thinking-boi-eye thinking-boi-eye-left"></div>
+                <div class="thinking-boi-eye thinking-boi-eye-right"></div>
+                <div class="boi-tear boi-tear-left" id="tear-left"></div>
+                <div class="boi-tear boi-tear-right" id="tear-right"></div>
+                <div class="thinking-boi-mouth"></div>
+                <div class="thinking-boi-hand"></div>
+            </div>
+        </div>
+        <!-- 开始/暂停按钮 -->
+        <button class="btn-toggle" id="btn-toggle">
+            <svg id="play-icon" viewBox="0 0 24 24" style="display: block;">
+                <path d="M8 5V19L19 12L8 5Z"/>
+            </svg>
+            <svg id="pause-icon" viewBox="0 0 24 24" style="display: none;">
+                <path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z"/>
+            </svg>
+            <span id="btn-toggle-text">开始</span>
+        </button>
+        <!-- 工作模式操作按钮 -->
+        <div class="action-buttons hidden" id="work-buttons">
+            <button class="btn-action btn-success" id="btn-complete">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"/></svg>
+                想得通
+            </button>
+            <button class="btn-action btn-fail" id="btn-giveup">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12C2 17.53 6.47 22 12 22C17.53 22 22 17.53 22 12C22 6.47 17.53 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM12 10.59L14.59 8L16 9.41L13.41 12L16 14.59L14.59 16L12 13.41L9.41 16L8 14.59L10.59 12L8 9.41L9.41 8L12 10.59Z"/></svg>
+                想不通
+            </button>
+        </div>
+        <!-- 休息模式操作按钮 -->
+        <div class="action-buttons hidden" id="break-buttons">
+            <button class="btn-action btn-end" id="btn-end-break">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM10 16.5L14 12L10 7.5V16.5Z"/></svg>
+                结束休息
+            </button>
+        </div>
+        <!-- 统计面板 -->
+        <div class="stats-panel">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-completed">0</div>
+                <div class="stat-label">已完成番茄</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-total">0分钟</div>
+                <div class="stat-label">今日专注</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-streak">0</div>
+                <div class="stat-label">连续天数</div>
+            </div>
+        </div>
+        <p class="easter-egg-hint">点击小人有惊喜</p>
+    </div>
+    <!-- 彩带容器 -->
+    <div id="confetti-container"></div>
+    <!-- 弹窗 -->
+    <div class="popup-overlay" id="popup">
+        <div class="popup-content">
+            <p class="popup-message" id="popup-message"></p>
+        </div>
+    </div>
+    <!-- 设置弹窗 -->
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-content">
+            <h2>设置</h2>
+            <div class="settings-group">
+                <label for="work-duration-input">工作时长 (分钟):</label>
+                <input type="range" id="work-duration-input" min="1" max="60" value="25">
+                <div class="range-value" id="work-duration-value">25分钟</div>
+            </div>
+            <div class="settings-group">
+                <label for="break-duration-input">休息时长 (分钟):</label>
+                <input type="range" id="break-duration-input" min="1" max="30" value="5">
+                <div class="range-value" id="break-duration-value">5分钟</div>
+            </div>
+            <div class="settings-toggle">
+                <label for="sound-toggle">音效开关:</label>
+                <label class="switch">
+                    <input type="checkbox" id="sound-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="settings-group">
+                <label for="volume-input">音效音量:</label>
+                <div class="volume-control">
+                    <svg class="volume-icon low" viewBox="0 0 24 24"><path d="M3 9V15H7L12 20V4L17 9H3Z"/></svg>
+                    <input type="range" id="volume-input" min="0" max="100" value="70">
+                    <svg class="volume-icon high" viewBox="0 0 24 24"><path d="M3 9V15H7L12 20V4L17 9H3ZM16.5 12C16.5 10.23 15.48 8.71 14 7.97V16.02C15.48 15.29 16.5 13.77 16.5 12ZM14 3.23V5.29C16.89 6.15 19 8.83 19 12C19 15.17 16.89 17.84 14 18.7V20.77C18.01 19.86 21 16.28 21 12C21 7.72 18.01 4.14 14 3.23Z"/></svg>
+                </div>
+                <div class="range-value" id="volume-value">70%</div>
+            </div>
+            <div class="settings-group">
+                <label>完成音效:</label>
+                <div class="sound-selector" id="sound-selector">
+                    <div class="sound-option active" data-sound="bell">
+                        <span class="sound-name">🔔 经典叮当</span>
+                        <button class="sound-preview" data-sound="bell">▶</button>
+                    </div>
+                    <div class="sound-option" data-sound="digital">
+                        <span class="sound-name">🔘 电子提示</span>
+                        <button class="sound-preview" data-sound="digital">▶</button>
+                    </div>
+                    <div class="sound-option" data-sound="zen">
+                        <span class="sound-name">🎵 冥想钵音</span>
+                        <button class="sound-preview" data-sound="zen">▶</button>
+                    </div>
+                    <div class="sound-option" data-sound="bubble">
+                        <span class="sound-name">🫧 气泡萌音</span>
+                        <button class="sound-preview" data-sound="bubble">▶</button>
+                    </div>
+                    <div class="sound-option" data-sound="chime">
+                        <span class="sound-name">🎐 清脆风铃</span>
+                        <button class="sound-preview" data-sound="chime">▶</button>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-toggle">
+                <label for="notification-toggle">桌面通知:</label>
+                <label class="switch">
+                    <input type="checkbox" id="notification-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button class="settings-close-btn" id="settings-close-btn">保存并关闭</button>
+        </div>
+    </div>
+    <!-- 音效元素 -->
+    <audio id="audio-start" src="https://www.soundjay.com/buttons/button-1.mp3" preload="auto"></audio>
+    <audio id="audio-pause" src="https://www.soundjay.com/buttons/button-2.mp3" preload="auto"></audio>
+    <!-- 完成音效（可切换） -->
+    <audio id="audio-complete" preload="auto"></audio>
+    <audio id="audio-fail" src="https://www.soundjay.com/misc/fail-buzzer-01.mp3" preload="auto"></audio>
+    <audio id="audio-tick" src="https://www.soundjay.com/misc/tick-tock-1.mp3" preload="auto"></audio>
+    <!-- 音效预览 -->
+    <audio id="audio-preview" preload="auto"></audio>
+    <script>
+        console.log('Pomodoro script started.'); // 调试：脚本开始执行
+        // 番茄钟配置
+        const POMODORO_CONFIG = {
+            work: 25 * 60,
+            break: 5 * 60,
+            workLabel: '专注时间',
+            breakLabel: '休息时间'
+        };
+        // 状态管理
+        const state = {
+            mode: 'work',
+            timeLeft: POMODORO_CONFIG.work,
+            isRunning: false,
+            isPaused: false,
+            completed: 0,
+            totalTime: 0,
+            streak: 0,
+            clickCount: 0,
+            isDarkMode: false,
+            soundEnabled: true,
+            notificationEnabled: true,
+            soundVolume: 70,
+            selectedSound: 'bell',
+            currentTask: '',
+            boiState: 'idle'
+        };
+        // 音效资源库
+        const SOUND_ASSETS = {
+            bell: {
+                complete: 'https://www.soundjay.com/misc/sounds/magic-chime-01.mp3',
+                preview: 'https://www.soundjay.com/buttons/sounds/button-09.mp3'
+            },
+            digital: {
+                complete: 'https://www.soundjay.com/misc/sounds/success-bell-01.mp3',
+                preview: 'https://www.soundjay.com/buttons/sounds/button-10.mp3'
+            },
+            zen: {
+                complete: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
+                preview: 'https://www.soundjay.com/buttons/sounds/button-11.mp3'
+            },
+            bubble: {
+                complete: 'https://www.soundjay.com/buttons/sounds/button-3.mp3',
+                preview: 'https://www.soundjay.com/buttons/sounds/button-4.mp3'
+            },
+            chime: {
+                complete: 'https://www.soundjay.com/misc/sounds/wind-chime-01.mp3',
+                preview: 'https://www.soundjay.com/buttons/sounds/button-12.mp3'
+            }
+        };
+        // DOM 元素
+        const elements = {
+            timerDisplay: document.getElementById('timer-display'),
+            timerLabel: document.getElementById('timer-label'),
+            progressCircle: document.getElementById('progress-circle'),
+            modeWork: document.getElementById('mode-work'),
+            modeBreak: document.getElementById('mode-break'),
+            thinkingBoi: document.getElementById('thinking-boi'),
+            boiSpeechBubble: document.getElementById('boi-speech-bubble'),
+            lamp: document.getElementById('lamp'),
+            question: document.getElementById('question'),
+            question2: document.getElementById('question2'),
+            tearLeft: document.getElementById('tear-left'),
+            tearRight: document.getElementById('tear-right'),
+            btnToggle: document.getElementById('btn-toggle'),
+            btnToggleText: document.getElementById('btn-toggle-text'),
+            playIcon: document.getElementById('play-icon'),
+            pauseIcon: document.getElementById('pause-icon'),
+            workButtons: document.getElementById('work-buttons'),
+            breakButtons: document.getElementById('break-buttons'),
+            btnComplete: document.getElementById('btn-complete'),
+            btnGiveup: document.getElementById('btn-giveup'),
+            btnEndBreak: document.getElementById('btn-end-break'),
+            statCompleted: document.getElementById('stat-completed'),
+            statTotal: document.getElementById('stat-total'),
+            statStreak: document.getElementById('stat-streak'),
+            popup: document.getElementById('popup'),
+            popupMessage: document.getElementById('popup-message'),
+            confettiContainer: document.getElementById('confetti-container'),
+            bgColorPicker: document.getElementById('bg-color-picker'),
+            bgPresets: document.querySelectorAll('.bg-preset'),
+            themeBtns: document.querySelectorAll('.theme-btn'),
+            themeToggle: document.getElementById('theme-toggle'),
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsModal: document.getElementById('settings-modal'),
+            settingsCloseBtn: document.getElementById('settings-close-btn'),
+            workDurationInput: document.getElementById('work-duration-input'),
+            workDurationValue: document.getElementById('work-duration-value'),
+            breakDurationInput: document.getElementById('break-duration-input'),
+            breakDurationValue: document.getElementById('break-duration-value'),
+            soundToggle: document.getElementById('sound-toggle'),
+            notificationToggle: document.getElementById('notification-toggle'),
+            volumeInput: document.getElementById('volume-input'),
+            volumeValue: document.getElementById('volume-value'),
+            volumeIconLow: document.querySelector('.volume-icon.low'),
+            volumeIconHigh: document.querySelector('.volume-icon.high'),
+            soundSelector: document.getElementById('sound-selector'),
+            soundOptions: document.querySelectorAll('.sound-option'),
+            soundPreviewBtns: document.querySelectorAll('.sound-preview'),
+            taskInput: document.getElementById('task-input'),
+            audioStart: document.getElementById('audio-start'),
+            audioPause: document.getElementById('audio-pause'),
+            audioComplete: document.getElementById('audio-complete'),
+            audioFail: document.getElementById('audio-fail'),
+            audioTick: document.getElementById('audio-tick'),
+            audioPreview: document.getElementById('audio-preview')
+        };
+        let timerInterval = null;
+        let boiAnimationId = null;
+        let boiTarget = { thinkingLevel: 0.5, px: 0.5, py: 0.5, mouthOpen: 0, eyeBlink: 0 };
+        let boiCurrent = { thinkingLevel: 0.5, px: 0.5, py: 0.5, mouthOpen: 0, eyeBlink: 0 };
+        let lastTickTime = 0;
+        // 工具函数
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        function playSound(audioElement) {
+            if (state.soundEnabled && audioElement) {
+                audioElement.volume = state.soundVolume / 100;
+                audioElement.currentTime = 0;
+                audioElement.play().catch(e => console.warn("Audio playback failed:", e));
+            }
+        }
+        function playCompleteSound() {
+            if (state.soundEnabled) {
+                const completeAudio = elements.audioComplete;
+                completeAudio.src = SOUND_ASSETS[state.selectedSound].complete;
+                completeAudio.volume = state.soundVolume / 100;
+                completeAudio.currentTime = 0;
+                completeAudio.play().catch(e => {
+                    console.warn("Complete sound playback failed:", e);
+                    // 备用：使用默认音效
+                    completeAudio.src = 'https://www.soundjay.com/misc/success-sound-effect.mp3';
+                    completeAudio.volume = state.soundVolume / 100;
+                    completeAudio.play().catch(err => console.warn("Fallback sound failed:", err));
+                });
+            }
+        }
+        function playPreviewSound(soundId) {
+            if (!soundId || !SOUND_ASSETS[soundId]) return;
+            const previewAudio = elements.audioPreview;
+            previewAudio.src = SOUND_ASSETS[soundId].preview;
+            previewAudio.volume = state.soundVolume / 100;
+            previewAudio.currentTime = 0;
+            previewAudio.play().catch(e => console.warn("Preview sound playback failed:", e));
+        }
+        function sendNotification(title, body) {
+            if (state.notificationEnabled && Notification.permission === 'granted') {
+                new Notification(title, { body: body });
+            }
+        }
+        function showPopup(message) {
+            elements.popupMessage.textContent = message;
+            elements.popup.classList.add('active');
+            setTimeout(() => {
+                elements.popup.classList.remove('active');
+            }, 2000);
+        }
+        function showBoiSpeech(message, duration = 2000) {
+            elements.boiSpeechBubble.textContent = message;
+            elements.boiSpeechBubble.classList.add('active');
+            clearTimeout(elements.boiSpeechBubble.timer);
+            elements.boiSpeechBubble.timer = setTimeout(() => {
+                elements.boiSpeechBubble.classList.remove('active');
+            }, duration);
+        }
+        // 状态更新与UI同步
+        function updateTimerDisplay() {
+            elements.timerDisplay.textContent = formatTime(state.timeLeft);
+            elements.timerLabel.textContent = state.mode === 'work' ? POMODORO_CONFIG.workLabel : POMODORO_CONFIG.breakLabel;
+            const totalTime = state.mode === 'work' ? POMODORO_CONFIG.work : POMODORO_CONFIG.break;
+            const progress = (totalTime - state.timeLeft) / totalTime;
+            const circumference = 691.15;
+            const offset = circumference * (1 - progress);
+            elements.progressCircle.style.strokeDashoffset = offset;
+        }
+        function updateStats() {
+            elements.statCompleted.textContent = state.completed;
+            const mins = Math.floor(state.totalTime / 60);
+            elements.statTotal.textContent = mins + '分钟';
+            elements.statStreak.textContent = state.streak;
+            saveState();
+        }
+        function updateToggleButton() {
+            if (state.isRunning && !state.isPaused) {
+                elements.playIcon.style.display = 'none';
+                elements.pauseIcon.style.display = 'block';
+                elements.btnToggleText.textContent = '暂停';
+            } else {
+                elements.playIcon.style.display = 'block';
+                elements.pauseIcon.style.display = 'none';
+                elements.btnToggleText.textContent = state.isPaused ? '继续' : '开始';
+            }
+        }
+        function updateModeIndicator() {
+            elements.modeWork.classList.toggle('active', state.mode === 'work');
+            elements.modeBreak.classList.toggle('active', state.mode === 'break');
+            elements.timerDisplay.classList.toggle('work-mode', state.mode === 'work');
+            elements.timerDisplay.classList.toggle('break-mode', state.mode === 'break');
+            elements.progressCircle.classList.toggle('break', state.mode === 'break');
+        }
+        function updateActionButtons() {
+            // 默认显示切换按钮，隐藏操作按钮
+            elements.btnToggle.classList.remove('hidden');
+            elements.workButtons.classList.add('hidden');
+            elements.breakButtons.classList.add('hidden');
+            
+            // 当计时器运行时，根据状态显示对应按钮
+            if (state.isRunning) {
+                elements.btnToggle.classList.add('hidden');
+                
+                // 休息模式：显示结束休息按钮（无论是否暂停）
+                if (state.mode === 'break') {
+                    elements.breakButtons.classList.remove('hidden');
+                }
+                // 工作模式且未暂停：显示想得通/想不通按钮
+                else if (state.mode === 'work' && !state.isPaused) {
+                    elements.workButtons.classList.remove('hidden');
+                }
+            }
+        }
+        // 思考小人动画与表情管理
+        function setBoiState(newState) {
+            state.boiState = newState;
+            clearBoiEffects();
+            switch (newState) {
+                case 'idle':
+                    boiTarget.thinkingLevel = 0.5;
+                    boiTarget.mouthOpen = 0;
+                    showBoiSpeech('准备好了吗？');
+                    break;
+                case 'focused':
+                    boiTarget.thinkingLevel = 0.8;
+                    boiTarget.mouthOpen = 0;
+                    showBoiSpeech('保持专注！');
+                    break;
+                case 'relaxed':
+                    boiTarget.thinkingLevel = 0.2;
+                    boiTarget.mouthOpen = 0.2;
+                    showBoiSpeech('好好休息一下~');
+                    break;
+                case 'confused':
+                    boiTarget.thinkingLevel = 1;
+                    boiTarget.mouthOpen = 0;
+                    elements.question.classList.add('active');
+                    elements.question2.classList.add('active');
+                    elements.tearLeft.classList.add('active');
+                    elements.tearRight.classList.add('active');
+                    showBoiSpeech('嗯...有点难');
+                    break;
+                case 'happy':
+                    boiTarget.thinkingLevel = 0;
+                    boiTarget.mouthOpen = 0.5;
+                    elements.lamp.classList.add('active');
+                    showBoiSpeech('💡 我想明白了！');
+                    break;
+                case 'paused':
+                    boiTarget.thinkingLevel = 0.4;
+                    boiTarget.mouthOpen = 0.1;
+                    showBoiSpeech('暂停一下...');
+                    break;
+            }
+            requestAnimationFrame(updateThinkingBoi);
+        }
+        function clearBoiEffects() {
+            elements.lamp.classList.remove('active');
+            elements.question.classList.remove('active');
+            elements.question2.classList.remove('active');
+            elements.tearLeft.classList.remove('active');
+            elements.tearRight.classList.remove('active');
+            elements.thinkingBoi.classList.remove('shake', 'pulse');
+            clearTimeout(elements.boiSpeechBubble.timer);
+            elements.boiSpeechBubble.classList.remove('active');
+        }
+        function updateThinkingBoi() {
+            let needsUpdate = false;
+            const damping = 0.08;
+            for (const prop in boiTarget) {
+                const diff = boiTarget[prop] - boiCurrent[prop];
+                if (Math.abs(diff) > 0.001) {
+                    boiCurrent[prop] += diff * damping;
+                    elements.thinkingBoi.style.setProperty('--' + prop, boiCurrent[prop]);
+                    needsUpdate = true;
+                }
+            }
+            if (state.boiState === 'idle' || state.boiState === 'relaxed' || state.boiState === 'paused') {
+                const now = Date.now();
+                if (!elements.thinkingBoi.lastBlink || now - elements.thinkingBoi.lastBlink > 5000 + Math.random() * 5000) {
+                    boiCurrent.eyeBlink = 1;
+                    elements.thinkingBoi.style.setProperty('--eye-blink', boiCurrent.eyeBlink);
+                    setTimeout(() => {
+                        boiCurrent.eyeBlink = 0;
+                        elements.thinkingBoi.style.setProperty('--eye-blink', boiCurrent.eyeBlink);
+                        elements.thinkingBoi.lastBlink = now;
+                    }, 150);
+                }
+                boiCurrent.thinkingLevel = boiTarget.thinkingLevel + Math.sin(now / 1000) * 0.02;
+                elements.thinkingBoi.style.setProperty('--thinking-level', boiCurrent.thinkingLevel);
+                needsUpdate = true;
+            }
+            if (needsUpdate) {
+                boiAnimationId = requestAnimationFrame(updateThinkingBoi);
+            } else {
+                boiAnimationId = null;
+            }
+        }
+        function onMouseMove(event) {
+            if (state.isRunning && !state.isPaused) return;
+            const x = event.clientX;
+            const y = event.clientY;
+            const container = elements.thinkingBoi.getBoundingClientRect();
+            let px = (x - container.left) / container.width;
+            let py = (y - container.top) / container.height;
+            px = Math.max(0.1, Math.min(0.9, px));
+            py = Math.max(0.1, Math.min(0.9, py));
+            boiTarget.px = px;
+            boiTarget.py = py;
+            boiTarget.thinkingLevel = 1 - py * 0.8;
+            requestAnimationFrame(updateThinkingBoi);
+        }
+        function onMouseLeave() {
+            if (state.isRunning && !state.isPaused) return;
+            boiTarget.px = 0.5;
+            boiTarget.py = 0.5;
+            setBoiState('idle');
+        }
+        // 计时器核心逻辑
+        function toggleTimer() {
+            console.log('btn-toggle clicked. Current state:', state.isRunning, state.isPaused); // 调试：按钮点击
+            if (state.isRunning && !state.isPaused) {
+                pauseTimer();
+            } else if (state.isRunning && state.isPaused) {
+                resumeTimer();
+            } else {
+                startTimer();
+            }
+        }
+        function startTimer() {
+            console.log('startTimer called'); // 调试：开始计时
+            if (state.timeLeft <= 0) {
+                resetToInitial();
+            }
+            state.isRunning = true;
+            state.isPaused = false;
+            playSound(elements.audioStart);
+            setBoiState('focused');
+            showBoiSpeech('开始专注！');
+            updateActionButtons();
+            timerInterval = setInterval(() => {
+                state.timeLeft--;
+                updateTimerDisplay();
+                
+                const now = Date.now();
+                if (now - lastTickTime > 900) {
+                    playSound(elements.audioTick);
+                    lastTickTime = now;
+                }
+                const totalTime = state.mode === 'work' ? POMODORO_CONFIG.work : POMODORO_CONFIG.break;
+                const progress = 1 - (state.timeLeft / totalTime);
+                if (state.mode === 'work') {
+                    boiTarget.thinkingLevel = 0.5 + progress * 0.4;
+                } else {
+                    boiTarget.thinkingLevel = 0.5 - progress * 0.4;
+                }
+                requestAnimationFrame(updateThinkingBoi);
+                if (state.timeLeft <= 0) {
+                    onTimerComplete();
+                }
+            }, 1000);
+            updateToggleButton();
+            updateActionButtons();
+        }
+        function pauseTimer() {
+            console.log('pauseTimer called'); // 调试：暂停计时
+            clearInterval(timerInterval);
+            state.isPaused = true;
+            playSound(elements.audioPause);
+            setBoiState('paused');
+            showBoiSpeech('休息一下...');
+            updateToggleButton();
+            updateActionButtons();
+        }
+        function resumeTimer() {
+            console.log('resumeTimer called'); // 调试：恢复计时
+            state.isPaused = false;
+            playSound(elements.audioStart);
+            setBoiState(state.mode === 'work' ? 'focused' : 'relaxed');
+            showBoiSpeech('继续加油！');
+            startTimer();
+        }
+        function onTimerComplete() {
+            console.log('onTimerComplete called'); // 调试：计时完成
+            clearInterval(timerInterval);
+            state.isRunning = false;
+            state.isPaused = false;
+            
+            if (state.mode === 'work') {
+                state.completed++;
+                state.totalTime += POMODORO_CONFIG.work;
+                updateStats();
+                playCompleteSound();
+                sendNotification('番茄钟', `🎉 工作完成！开始休息。`);
+                showPopup('🎉 工作完成！开始休息');
+                playSuccessEffect();
+                
+                // 立即进入休息模式
+                enterBreakMode();
+                state.isRunning = true;
+                state.isPaused = true; // 暂停状态，让用户决定何时开始休息
+                updateToggleButton();
+                updateActionButtons();
+                setBoiState('relaxed');
+                showBoiSpeech('休息一下吧~');
+            } else {
+                playCompleteSound();
+                sendNotification('番茄钟', `✨ 休息结束！准备开始新的专注。`);
+                showPopup('✨ 休息结束！');
+                
+                // 立即重置到初始状态
+                resetToInitial();
+            }
+        }
+        function completeWork() {
+            console.log('completeWork called'); // 调试：完成工作
+            clearInterval(timerInterval);
+            state.isRunning = false;
+            state.isPaused = false;
+            
+            const elapsed = (POMODORO_CONFIG.work - state.timeLeft);
+            if (elapsed > 0) {
+                state.totalTime += elapsed;
+            }
+            state.completed++;
+            updateStats();
+            
+            playCompleteSound();
+            sendNotification('番茄钟', `💡 太棒了！任务完成，开始休息。`);
+            showPopup('💡 太棒了！开始休息');
+            playSuccessEffect();
+            setBoiState('happy');
+            
+            // 立即进入休息模式并更新按钮状态
+            enterBreakMode();
+            state.isRunning = true;
+            state.isPaused = true; // 暂停状态，让用户决定何时开始休息
+            updateToggleButton();
+            updateActionButtons();
+            setBoiState('relaxed');
+            showBoiSpeech('休息一下吧~');
+        }
+        function giveUpWork() {
+            console.log('giveUpWork called'); // 调试：放弃工作
+            clearInterval(timerInterval);
+            state.isRunning = false;
+            state.isPaused = false;
+            
+            playSound(elements.audioFail);
+            sendNotification('番茄钟', `🤔 没关系，休息一下，下次再战！`);
+            showPopup('🤔 没关系，休息一下');
+            playFailEffect();
+            setBoiState('confused');
+            
+            // 立即进入休息模式并更新按钮状态
+            enterBreakMode();
+            state.isRunning = true;
+            state.isPaused = true; // 暂停状态，让用户决定何时开始休息
+            updateToggleButton();
+            updateActionButtons();
+            setBoiState('relaxed');
+            showBoiSpeech('休息一下吧~');
+        }
+        function endBreak() {
+            console.log('endBreak called'); // 调试：结束休息
+            clearInterval(timerInterval);
+            state.isRunning = false;
+            state.isPaused = false;
+            
+            playSound(elements.audioStart);
+            sendNotification('番茄钟', `🏁 准备开始新的番茄！`);
+            showPopup('🏁 准备开始新的番茄');
+            
+            // 立即重置到初始状态，并切换回工作模式
+            enterWorkMode();
+            resetToInitial();
+        }
+        function enterWorkMode() {
+            state.mode = 'work';
+            state.timeLeft = POMODORO_CONFIG.work;
+            updateModeIndicator();
+            updateTimerDisplay();
+        }
+        function enterBreakMode() {
+            state.mode = 'break';
+            state.timeLeft = POMODORO_CONFIG.break;
+            updateModeIndicator();
+            updateTimerDisplay();
+        }
+        function resetToInitial() {
+            console.log('resetToInitial called'); // 调试：重置到初始状态
+            clearInterval(timerInterval);
+            state.isRunning = false;
+            state.isPaused = false;
+            
+            // 重置为工作模式
+            enterWorkMode();
+            setBoiState('idle');
+            
+            elements.taskInput.value = state.currentTask;
+            updateToggleButton();
+            updateActionButtons();
+        }
+        // 效果函数
+        function playSuccessEffect() {
+            createConfetti();
+            setTimeout(createStars, 300);
+        }
+        function playFailEffect() {
+            elements.thinkingBoi.classList.add('shake');
+            setTimeout(() => elements.thinkingBoi.classList.remove('shake'), 500);
+        }
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#34c759'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti active';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    elements.confettiContainer.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 2500);
+                }, i * 40);
+            }
+        }
+        function createStars() {
+            const stars = ['⭐', '✨', '💫'];
+            const container = elements.thinkingBoi.parentElement;
+            
+            for (let i = 0; i < 8; i++) {
+                const star = document.createElement('div');
+                star.className = 'star active';
+                star.textContent = stars[Math.floor(Math.random() * stars.length)];
+                star.style.left = (Math.random() * 60 + 20) + '%';
+                star.style.top = (Math.random() * 60 + 20) + '%';
+                star.style.animationDelay = (Math.random() * 0.5) + 's';
+                container.appendChild(star);
+                setTimeout(() => star.remove(), 2000);
+            }
+        }
+        // 持久化与加载
+        function saveState() {
+            localStorage.setItem('pomodoroState', JSON.stringify({
+                completed: state.completed,
+                totalTime: state.totalTime,
+                streak: state.streak,
+                isDarkMode: state.isDarkMode,
+                workDuration: POMODORO_CONFIG.work / 60,
+                breakDuration: POMODORO_CONFIG.break / 60,
+                soundEnabled: state.soundEnabled,
+                notificationEnabled: state.notificationEnabled,
+                soundVolume: state.soundVolume,
+                selectedSound: state.selectedSound,
+                currentTask: state.currentTask
+            }));
+        }
+        function loadState() {
+            const savedState = JSON.parse(localStorage.getItem('pomodoroState'));
+            if (savedState) {
+                state.completed = savedState.completed || 0;
+                state.totalTime = savedState.totalTime || 0;
+                state.streak = savedState.streak || 0;
+                state.isDarkMode = savedState.isDarkMode === true;
+                state.soundEnabled = savedState.soundEnabled !== false;
+                state.notificationEnabled = savedState.notificationEnabled !== false;
+                state.soundVolume = savedState.soundVolume || 70;
+                state.selectedSound = savedState.selectedSound || 'bell';
+                state.currentTask = savedState.currentTask || '';
+                POMODORO_CONFIG.work = (savedState.workDuration || 25) * 60;
+                POMODORO_CONFIG.break = (savedState.breakDuration || 5) * 60;
+                document.body.classList.toggle('dark-mode', state.isDarkMode);
+                
+                elements.workDurationInput.value = POMODORO_CONFIG.work / 60;
+                elements.workDurationValue.textContent = `${POMODORO_CONFIG.work / 60}分钟`;
+                elements.breakDurationInput.value = POMODORO_CONFIG.break / 60;
+                elements.breakDurationValue.textContent = `${POMODORO_CONFIG.break / 60}分钟`;
+                elements.soundToggle.checked = state.soundEnabled;
+                elements.notificationToggle.checked = state.notificationEnabled;
+                elements.volumeInput.value = state.soundVolume;
+                elements.volumeValue.textContent = state.soundVolume + '%';
+                updateVolumeIcon(state.soundVolume);
+                updateSoundSelection(state.selectedSound);
+                elements.taskInput.value = state.currentTask;
+            }
+        }
+        // 初始化
+        function init() {
+            console.log('init() function called. Attaching event listeners...'); // 调试：init函数开始
+            loadState();
+            if (state.notificationEnabled && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                    } else {
+                        console.warn('Notification permission denied.');
+                        state.notificationEnabled = false;
+                        elements.notificationToggle.checked = false;
+                        saveState();
+                    }
+                });
+            }
+            
+            // 触摸和点击事件助手函数
+            function addTouchAndClickListener(element, handler) {
+                if (!element) return;
+                element.addEventListener('click', handler);
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    handler();
+                }, { passive: false });
+            }
+            
+            // 模式切换按钮
+            addTouchAndClickListener(elements.modeWork, () => {
+                if (state.mode !== 'work' && !state.isRunning) {
+                    enterWorkMode();
+                    resetToInitial();
+                }
+            });
+            
+            addTouchAndClickListener(elements.modeBreak, () => {
+                if (state.mode !== 'break' && !state.isRunning) {
+                    enterBreakMode();
+                    resetToInitial();
+                }
+            });
+            
+            // 主题和设置按钮
+            addTouchAndClickListener(elements.themeToggle, toggleDarkMode);
+            addTouchAndClickListener(elements.settingsBtn, openSettings);
+            addTouchAndClickListener(elements.settingsCloseBtn, closeSettings);
+            
+            // 主功能按钮
+            addTouchAndClickListener(elements.btnToggle, toggleTimer);
+            addTouchAndClickListener(elements.btnComplete, completeWork);
+            addTouchAndClickListener(elements.btnGiveup, giveUpWork);
+            addTouchAndClickListener(elements.btnEndBreak, endBreak);
+            
+            // 思考小人交互
+            addTouchAndClickListener(elements.thinkingBoi, checkClickEasterEgg);
+            elements.thinkingBoi.addEventListener('mousemove', onMouseMove);
+            elements.thinkingBoi.addEventListener('mouseleave', onMouseLeave);
+            
+            // 主题按钮 - 主内容区和侧栏
+            const allThemeBtns = document.querySelectorAll('.theme-btn');
+            allThemeBtns.forEach(btn => {
+                addTouchAndClickListener(btn, () => switchTheme(btn.dataset.theme));
+            });
+            
+            // 背景颜色预设 - 主内容区和侧栏
+            const allBgPresets = document.querySelectorAll('.bg-preset');
+            allBgPresets.forEach(preset => {
+                addTouchAndClickListener(preset, () => {
+                    setBackgroundColor(preset.dataset.color);
+                });
+            });
+            
+            elements.bgColorPicker.addEventListener('input', (e) => {
+                setBackgroundColor(e.target.value);
+            });
+            
+            // 音量滑块
+            if (elements.volumeInput) {
+                elements.volumeInput.addEventListener('input', (e) => {
+                    const volume = parseInt(e.target.value);
+                    state.soundVolume = volume;
+                    elements.volumeValue.textContent = volume + '%';
+                    updateVolumeIcon(volume);
+                });
+                elements.volumeInput.addEventListener('change', () => {
+                    saveState();
+                });
+            }
+            
+            // 音效预览按钮
+            if (elements.soundPreviewBtns) {
+                elements.soundPreviewBtns.forEach(btn => {
+                    addTouchAndClickListener(btn, (e) => {
+                        e.stopPropagation();
+                        const soundId = btn.dataset.sound;
+                        playPreviewSound(soundId);
+                    });
+                });
+            }
+            
+            // 音效选择
+            if (elements.soundOptions) {
+                elements.soundOptions.forEach(option => {
+                    addTouchAndClickListener(option, () => {
+                        const soundId = option.dataset.sound;
+                        state.selectedSound = soundId;
+                        updateSoundSelection(soundId);
+                        playPreviewSound(soundId);
+                    });
+                });
+            }
+            
+            updateTimerDisplay();
+            updateStats();
+            updateToggleButton();
+            updateModeIndicator();
+            updateActionButtons();
+            setBoiState('idle');
+            
+            console.log('思考小人番茄钟已启动，所有监听器已尝试绑定。'); // 调试：init函数结束
+        }
+        // 主题和背景切换
+        function toggleDarkMode() {
+            console.log('toggleDarkMode called'); // 调试：切换深色模式
+            state.isDarkMode = !state.isDarkMode;
+            document.body.classList.toggle('dark-mode', state.isDarkMode);
+            saveState();
+        }
+        function updateVolumeIcon(volume) {
+            if (!elements.volumeIconLow || !elements.volumeIconHigh) return;
+            // 更新低音量图标
+            elements.volumeIconLow.style.opacity = volume > 0 ? '1' : '0.3';
+            elements.volumeIconHigh.style.opacity = volume > 50 ? '1' : '0.3';
+        }
+        function updateSoundSelection(soundId) {
+            if (!elements.soundOptions) return;
+            elements.soundOptions.forEach(option => {
+                option.classList.toggle('active', option.dataset.sound === soundId);
+            });
+        }
+        function switchTheme(theme) {
+            console.log('switchTheme called:', theme); // 调试：切换主题
+            document.body.classList.remove('theme-blue', 'theme-purple', 'theme-orange');
+            if (theme !== 'green') {
+                document.body.classList.add('theme-' + theme);
+            }
+            // 更新所有主题按钮状态（包括侧栏和移动端）
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme);
+            });
+        }
+        function setBackgroundColor(color) {
+            console.log('setBackgroundColor called:', color); // 调试：设置背景色
+            document.body.style.backgroundColor = color;
+            elements.bgColorPicker.value = color;
+            // 更新所有背景预设状态（包括侧栏和移动端）
+            document.querySelectorAll('.bg-preset').forEach(preset => {
+                preset.classList.toggle('active', preset.dataset.color === color);
+            });
+        }
+        // 设置弹窗逻辑
+        function openSettings() {
+            console.log('openSettings called'); // 调试：打开设置
+            elements.settingsModal.classList.add('active');
+            elements.workDurationInput.value = POMODORO_CONFIG.work / 60;
+            elements.workDurationValue.textContent = `${POMODORO_CONFIG.work / 60}分钟`;
+            elements.breakDurationInput.value = POMODORO_CONFIG.break / 60;
+            elements.breakDurationValue.textContent = `${POMODORO_CONFIG.break / 60}分钟`;
+            elements.soundToggle.checked = state.soundEnabled;
+            elements.notificationToggle.checked = state.notificationEnabled;
+        }
+        function closeSettings() {
+            console.log('closeSettings called'); // 调试：关闭设置
+            POMODORO_CONFIG.work = parseInt(elements.workDurationInput.value) * 60;
+            POMODORO_CONFIG.break = parseInt(elements.breakDurationInput.value) * 60;
+            state.soundEnabled = elements.soundToggle.checked;
+            state.notificationEnabled = elements.notificationToggle.checked;
+            state.soundVolume = parseInt(elements.volumeInput.value);
+            const activeSoundOption = document.querySelector('.sound-option.active');
+            state.selectedSound = activeSoundOption ? activeSoundOption.dataset.sound : 'bell';
+            
+            if (!state.isRunning) {
+                if (state.mode === 'work') {
+                    state.timeLeft = POMODORO_CONFIG.work;
+                } else {
+                    state.timeLeft = POMODORO_CONFIG.break;
+                }
+                updateTimerDisplay();
+            }
+            saveState();
+            elements.settingsModal.classList.remove('active');
+        }
+        // 彩蛋逻辑
+        function checkClickEasterEgg() {
+            console.log('thinking-boi clicked. Click count:', state.clickCount + 1); // 调试：小人点击
+            state.clickCount++;
+            
+            if (state.clickCount === 5) {
+                elements.thinkingBoi.classList.add('pulse');
+                setTimeout(() => elements.thinkingBoi.classList.remove('pulse'), 400);
+                showBoiSpeech('嘿！别戳我啦~');
+            } else if (state.clickCount === 10) {
+                showBoiSpeech('🎯 你是点击大师！');
+            } else if (state.clickCount === 15) {
+                createConfetti();
+                showBoiSpeech('🔥 能量爆发！');
+            } else if (state.clickCount === 20) {
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => createConfetti(), i * 300);
+                }
+                showBoiSpeech('👑 终极思考者！');
+                state.clickCount = 0;
+            }
+        }
+        init();
+    </script>
+</body>
+</html>
